@@ -1,0 +1,4 @@
+namespace ExpBot
+
+module RankUp =
+    ()

@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <RuntimeIdentifiers>win10-x64</RuntimeIdentifiers>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Utility.fs" />
+
+    <Compile Include="Analyze/AnalyzeData.fs" />
+    <Compile Include="RankUp/RankUp.fs" />
+
+    <Compile Include="Dapper/DapperData.fs" />
+    <Compile Include="Dapper/DapperMapping.fs" />
+
+    <Compile Include="Analyze/Filters.fs" />
+    <Compile Include="Analyze/MsgHandle.fs" />
+
+    <Compile Include="Discord/Commands.fs" />
+    <Compile Include="Discord/Initialize.fs" />
+
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" Version="1.50.4" />
+    <PackageReference Include="DSharpPlus" Version="3.2.3" />
+    <PackageReference Include="Fable.JsonConverter" Version="1.0.7" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="2.0.0" />
+    <PackageReference Include="Npgsql" Version="3.2.6" />
+  </ItemGroup>
+
+</Project>
