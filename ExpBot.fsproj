@@ -12,6 +12,9 @@
     <Compile Include="Analyze/AnalyzeData.fs" />
     <Compile Include="RankUp/RankUp.fs" />
 
+    <Compile Include="GiveRole/RoleData.fs" />
+    <Compile Include="GiveRole/GiveRole.fs" />
+
     <Compile Include="Dapper/DapperData.fs" />
     <Compile Include="Dapper/DapperMapping.fs" />
 
