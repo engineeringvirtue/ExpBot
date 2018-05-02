@@ -1,6 +1,7 @@
 namespace ExpBot
 open DSharpPlus
 open DSharpPlus.Entities
+open Chessie.ErrorHandling
 
 open Data
 
@@ -14,16 +15,16 @@ module Commands =
 
     let MatchPrefix (prefix:char) (str:string) =
         match str.StartsWith (prefix) with
-            | true -> Ok str.[1..]
-            | false -> Error ()
+            | true -> ok str.[1..]
+            | false -> fail ()
 
     let MatchCommand (command:string) (str:string) =
         match str.StartsWith (command) with
-            | true -> Ok str.[command.Length..]
-            | false -> Error ()
+            | true -> ok str.[command.Length..]
+            | false -> fail ()
 
     let ArgumentMatch (str:string) =
-        Ok ([],str)
+        ok ([],str)
 
 
     let MatchStringArg (seperator:string) (nextseperator:string) (argdata,str:string) =
@@ -31,20 +32,20 @@ module Commands =
         let seperatormatcher = (seperator+"(.+)")
         match str with
             | RegexMatch seperatormatcher [x] when nextseperator="" ->
-                Ok (x::argdata, "")
+                ok (x::argdata, "")
             | RegexMatch matcher [x;_] when x<>"" ->
-                Ok (x::argdata,str.[x.Length+seperator.Length..])
+                ok (x::argdata,str.[x.Length+seperator.Length..])
             | RegexMatch matcher [_;x] when x<>"" ->
-                Ok (x::argdata,str.[x.Length+seperator.Length..])
-            | _ -> Error ()
+                ok (x::argdata,str.[x.Length+seperator.Length..])
+            | _ -> fail ()
 
 
     let MatchOptional (matchfunc:string->string->string list*string->Result<string list*string,unit>) (seperator:string) (nextseperator:string) (x:string list*string) =
         let res = matchfunc seperator nextseperator x
 
         match res with
-            | Error _ -> Ok x
-            | Ok y -> Ok y
+            | Fail _ -> ok x
+            | PassOrWarn y -> ok y
 
 
     let CmdsToEvent (cmds:Cmd list) (cmdinfo:CmdInfo) =
@@ -58,19 +59,19 @@ module Commands =
 
 
     let CmdResult (x:Result<_,_>) =
-        Ok ""
+        ok ""
 
 
     //COMMANDS
-    let CommandBase cmd = (MatchPrefix '~') >> Result.bind (MatchCommand cmd)
+    let CommandBase cmd = (MatchPrefix '~') >> bind (MatchCommand cmd)
 
     let statusfunc connstr ranks (info:CmdInfo) str = async {
-        use conn = DapperData.InitializeConn connstr
+        use conn = LimeBeanData.InitializeConn connstr
         let author = info.Message.Author
-        let! user = DapperMapping.GetOrMakeUser (int64 author.Id) conn
+        let! user = LimeBeanMapping.GetOrMakeUser (int64 author.Id) conn
 
         match user with
-            | Ok {Data.User.Exp=Exp exp; Rank=rank} ->
+            | PassOrWarn {Data.User.Exp=Exp exp; Rank=rank} ->
                 let (Rank (_,roleid)) = List.item rank ranks
                 let nextrolename, expstring =
                     match List.tryItem (rank+1) ranks with
@@ -102,22 +103,23 @@ module Commands =
                 let embed = embed.Build ()
                 do! info.Message.RespondAsync (embed=embed) |> Async.AwaitTask |> Async.Ignore
 
-                return Ok ()
-            | Error err -> return Error err
+                return ok ()
+            | Fail err -> return Bad err
     }
 
+    open LimeBeanData
     let breakdownfunc connstr ranks (info:CmdInfo) str = async {
-        use conn = DapperData.InitializeConn connstr
+        use conn = LimeBeanData.InitializeConn connstr
         let author = info.Message.Author
-        let! msgs = conn |> DapperMapping.GetLastMessagesMadeByUser (int64 author.Id)
+        let! msgs = conn |> LimeBeanMapping.GetLastMessagesMadeByUser (int64 author.Id)
 
         match msgs with
             | [] ->
                 do! info.Message.RespondAsync ("You have not sent any messages yet!") |> Async.AwaitTask |> Async.Ignore
             | msgs ->
-                let consistent = List.averageBy (fun (x:DatabaseTypes.DBTempMessage) -> x.Consistent |> BoolToInt) msgs
-                let spam = List.averageBy (fun (x:DatabaseTypes.DBTempMessage) -> x.Spam |> BoolToInt) msgs
-                let same = List.averageBy (fun (x:DatabaseTypes.DBTempMessage) -> x.SamePerson |> BoolToInt) msgs
+                let consistent = List.averageBy (Get "consistent" >> BoolToInt) msgs
+                let spam = List.averageBy (Get "spam" >> BoolToInt) msgs
+                let same = List.averageBy (Get "sameperson" >> BoolToInt) msgs
 
                 let topercentstring float =
                     let p = float |> ToPercent
@@ -133,7 +135,7 @@ module Commands =
                 let embed = embed.Build ()
                 do! info.Message.RespondAsync (embed=embed) |> Async.AwaitTask |> Async.Ignore
 
-        return Ok ()
+        return ok ()
     }
 
     let statuscmd connstr ranks cmdinfo = CommandBase "status" >> ResultBindAsyncIgnore (statusfunc connstr ranks cmdinfo)

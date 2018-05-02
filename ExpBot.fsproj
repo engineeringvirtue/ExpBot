@@ -15,8 +15,8 @@
     <Compile Include="GiveRole/RoleData.fs" />
     <Compile Include="GiveRole/GiveRole.fs" />
 
-    <Compile Include="Dapper/DapperData.fs" />
-    <Compile Include="Dapper/DapperMapping.fs" />
+    <Compile Include="LimeBean/LimeBeanData.fs" />
+    <Compile Include="LimeBean/LimeBeanMapping.fs" />
 
     <Compile Include="Analyze/Filters.fs" />
     <Compile Include="Analyze/MsgHandle.fs" />
@@ -28,10 +28,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Dapper" Version="1.50.4" />
+    <PackageReference Include="Chessie" Version="0.6.0" />
     <PackageReference Include="DSharpPlus" Version="3.2.3" />
-    <PackageReference Include="Fable.JsonConverter" Version="1.0.7" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="2.0.0" />
+    <PackageReference Include="LimeBean" Version="1.2.7" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="Npgsql" Version="3.2.6" />
   </ItemGroup>
 

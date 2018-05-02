@@ -1,5 +1,6 @@
 namespace ExpBot
 open DSharpPlus
+open Chessie.ErrorHandling
 open System
 open System.Threading.Tasks
 open DSharpPlus.Entities
@@ -27,6 +28,10 @@ module Utility =
     let (|RegexMatch|_|) pattern input =
        let m = Regex.Match(input,pattern)
        if (m.Success) then Some (m.Groups |> Seq.toList |> List.map (fun x -> x.Value)) else None
+
+    let (|PassOrWarn|_|) = function
+        | Pass y | Warn (y,_) -> Some y
+        | _ -> None
 
     open Microsoft.FSharp.Reflection
 
@@ -60,13 +65,13 @@ module Utility =
 
     let ResultBindIgnore y x =
         match x with
-            | Error err -> Error err
-            | Ok okval -> (y okval)
+            | Fail err -> Bad err
+            | PassOrWarn okval -> (y okval)
 
     let ResultBindAsyncIgnore y x = async {
         match x with
-            | Error err -> return Error err
-            | Ok okval -> return! (y okval)
+            | Fail err -> return Bad err
+            | PassOrWarn okval -> return! (y okval)
     }
 
     let UnixTime secsoffset =
@@ -86,9 +91,7 @@ module Utility =
 module JSONConverter =
     open Newtonsoft.Json
 
-    let FableJsonConverter = Fable.JsonConverter() :> JsonConverter
-
     let toJson value =
-        JsonConvert.SerializeObject(value, [|FableJsonConverter|])
+        JsonConvert.SerializeObject(value)
     let ofJson json =
-        JsonConvert.DeserializeObject<'T>(json, [|FableJsonConverter|])
+        JsonConvert.DeserializeObject<'T>(json)

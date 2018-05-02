@@ -1,10 +1,12 @@
 namespace ExpBot
 open Data
 open Filters
-open DapperMapping
+open LimeBeanMapping
+open Utility
 
 open DSharpPlus
-    open DSharpPlus.Entities
+open DSharpPlus.Entities
+open Chessie.ErrorHandling
 
 module Analyze =
     let ComputeFilterIntensities filters baseexp =
@@ -20,7 +22,7 @@ module Analyze =
         | Announcement of string
 
     let HandleMessage {ConnString=connstr;} ranks (dmsgdata:DiscordMessage) newmsg = async {
-        use conn = DapperData.InitializeConn connstr
+        use conn = LimeBeanData.InitializeConn connstr
 
         let! user = GetOrMakeUser newmsg.UserId conn
 
@@ -40,14 +42,14 @@ module Analyze =
                 | _ -> false
         let same = match replyintensity with | FilterIntensity (x,_) when x > 0.0 -> true | _ -> false
 
-        Utility.Log ("Repeat: "+string repeatintensity+" Spam: "+string spamintensity+" Reply: "+string replyintensity+" Length: "+string lengthintensity+" Consistency: "+string consistencyintensity)
+        Log ("Repeat: "+string repeatintensity+" Spam: "+string spamintensity+" Reply: "+string replyintensity+" Length: "+string lengthintensity+" Consistency: "+string consistencyintensity)
         let unprocexp = float 50 |> ComputeFilterIntensities [repeatintensity; spamintensity; replyintensity; lengthintensity; consistencyintensity]
         let exp = if unprocexp < float 0 then float 0 else unprocexp
 
-        do! conn |> DapperMapping.MakeMessage {Message={newmsg with Exp=Exp exp}; MessageBreakdown={Spam=spam; Consistent=consistent; SamePerson=same}} |> Async.Ignore
+        do! conn |> LimeBeanMapping.MakeMessage {Message={newmsg with Exp=Exp exp}; MessageBreakdown={Spam=spam; Consistent=consistent; SamePerson=same}} |> Async.Ignore
 
         match user with
-            | Ok x ->
+            | PassOrWarn x ->
                 let {Rank=rank;Exp=Exp curexp} = x
                 let newexp = curexp+exp
                 let nextranki = rank+1
@@ -66,8 +68,8 @@ module Analyze =
                             {x with Rank=rank+1; Exp=Exp remainder}, msg
                         | _ -> {x with Exp=Exp newexp}, []
                 do! conn |> UpdateUser newuser |> Async.Ignore
-                return Ok msg
-            | Error _ -> return Error "idk wut happen i think a doggo died"
+                return ok msg
+            | Fail _ -> return fail "idk wut happen i think a doggo died"
     }
 
     let MessageHandleContainer config ranks (message:DiscordMessage) (user:DiscordMember) = async {
@@ -84,7 +86,7 @@ module Analyze =
         }
 
         match res with
-            | Ok res when List.isEmpty res |> not ->
+            | PassOrWarn res when List.isEmpty res |> not ->
                 do! List.map (doEffect user) res |> List.toSeq |> Async.Parallel |> Async.Ignore
                 ()
             | _ -> ()

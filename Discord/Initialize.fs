@@ -54,6 +54,6 @@ module Initialize =
         do! MakeNewClient config.Token |> AddReady Ready |> AddLog
             |> fun x -> AddMessageCreated (Commands.ExpBotMessageCreated config ranks x) x
             |> AddMemberLeave
-                (fun x -> DapperData.InitializeConn config.ConnString |> DapperMapping.RemoveUser x.Member.Id |> Async.Ignore)
+                (fun x -> LimeBeanData.InitializeConn config.ConnString |> LimeBeanMapping.RemoveUser x.Member.Id |> Async.Ignore)
             |> Connect |> LoopForever
     }

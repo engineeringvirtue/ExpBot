@@ -25,14 +25,14 @@ module Program =
                 config
 
         let init connstring = async {
-            use conn = DapperData.InitializeConn connstring
+            use conn = LimeBeanData.InitializeConn connstring
             let! sqltoexec = File.ReadAllTextAsync ("./Dependencies/SQL/init.sql") |> Async.AwaitTask
-            return! conn |> DapperData.MapExecute sqltoexec (Map [])
+            return conn |> LimeBeanData.Exec sqltoexec [||]
         }
 
         let rec timer connstring = async {
-            use conn = DapperData.InitializeConn connstring
-            do! conn |> DapperMapping.PurgeOldMessages 86400.0 |> Async.Ignore
+            use conn = LimeBeanData.InitializeConn connstring
+            do! conn |> LimeBeanMapping.PurgeOldMessages 86400.0 |> Async.Ignore
             do! Async.Sleep (3600*1000)
             return! timer connstring
         }
