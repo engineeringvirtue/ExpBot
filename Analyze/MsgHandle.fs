@@ -48,46 +48,23 @@ module Analyze =
 
         do! conn |> LimeBeanMapping.MakeMessage {Message={newmsg with Exp=Exp exp}; MessageBreakdown={Spam=spam; Consistent=consistent; SamePerson=same}} |> Async.Ignore
 
-        match user with
-            | PassOrWarn x ->
-                let {Rank=rank;Exp=Exp curexp} = x
-                let newexp = curexp+exp
-                let nextranki = rank+1
-                let newuser, msg =
-                    match List.tryItem (nextranki) ranks with
-                        | Some (Rank (Exp nextrankexp,roleid)) when newexp >= nextrankexp ->
-                            let remainder = newexp-nextrankexp
-                            let msg = match roleid with
-                                        | Some roleid ->
-                                            let change = [ChangeRole roleid]
-                                            if nextranki % 10 = 0 then
-                                                let role = dmsgdata.Channel.Guild.GetRole (roleid)
-                                                (dmsgdata.Author.Mention+" has reached "+role.Name+"!" |> Announcement)::change
-                                            else change
-                                        | None -> []
-                            {x with Rank=rank+1; Exp=Exp remainder}, msg
-                        | _ -> {x with Exp=Exp newexp}, []
-                do! conn |> UpdateUser newuser |> Async.Ignore
-                return ok msg
-            | Fail _ -> return fail "idk wut happen i think a doggo died"
-    }
-
-    let MessageHandleContainer config ranks (message:DiscordMessage) (user:DiscordMember) = async {
-        let! res = {UserId=int64 user.Id; Contents=message.Content; Exp=Exp 0.0} |> HandleMessage config ranks message
-
-        let doEffect (user:DiscordMember) ef = async {
-            match ef with
-                | ChangeRole newroleid ->
-                    let role = user.Guild.GetRole (newroleid)
-                    do! user.GrantRoleAsync (role,"EXP!") |> Async.AwaitTask
-                | Announcement str ->
-                    let chan = message.Channel.Guild.GetChannel (config.AnnouncementChannel)
-                    do! chan.SendMessageAsync str |> Async.AwaitTask |> Async.Ignore
-        }
-
-        match res with
-            | PassOrWarn res when List.isEmpty res |> not ->
-                do! List.map (doEffect user) res |> List.toSeq |> Async.Parallel |> Async.Ignore
-                ()
-            | _ -> ()
+        let {Rank=rank;Exp=Exp curexp} = user
+        let newexp = curexp+exp
+        let nextranki = rank+1
+        let newuser, msg =
+            match List.tryItem (nextranki) ranks with
+                | Some (Rank (Exp nextrankexp,roleid)) when newexp >= nextrankexp ->
+                    let remainder = newexp-nextrankexp
+                    let msg = match roleid with
+                                | Some roleid ->
+                                    let change = [ChangeRole roleid]
+                                    if nextranki % 10 = 0 then
+                                        let role = dmsgdata.Channel.Guild.GetRole (roleid)
+                                        (dmsgdata.Author.Mention+" has reached "+role.Name+"!" |> Announcement)::change
+                                    else change
+                                | None -> []
+                    {user with Rank=rank+1; Exp=Exp remainder}, msg
+                | _ -> {user with Exp=Exp newexp}, []
+        do! conn |> UpdateUser newuser |> Async.Ignore
+        return ok msg
     }

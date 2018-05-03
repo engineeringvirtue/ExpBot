@@ -12,14 +12,19 @@
     <Compile Include="Analyze/AnalyzeData.fs" />
     <Compile Include="RankUp/RankUp.fs" />
 
-    <Compile Include="GiveRole/RoleData.fs" />
-    <Compile Include="GiveRole/GiveRole.fs" />
+    <Compile Include="CustomRoles/RoleData.fs" />
 
     <Compile Include="LimeBean/LimeBeanData.fs" />
     <Compile Include="LimeBean/LimeBeanMapping.fs" />
 
     <Compile Include="Analyze/Filters.fs" />
     <Compile Include="Analyze/MsgHandle.fs" />
+
+    <Compile Include="Discord/CommandData.fs" />
+
+    <Compile Include="Discord/Actions/Utility.fs" />
+    <Compile Include="Discord/Actions/Exp.fs" />
+    <Compile Include="Discord/Actions/GiveRole.fs" />
 
     <Compile Include="Discord/Commands.fs" />
     <Compile Include="Discord/Initialize.fs" />

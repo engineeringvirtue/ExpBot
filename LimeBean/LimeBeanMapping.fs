@@ -25,10 +25,10 @@ module LimeBeanMapping =
         let defaultuser = {UserId=id; Exp=Exp 0.0; Rank=0 }
         let res = conn |> Find "user" "WHERE Id={0}" [|id|]
         match res |> Array.tryHead with
-            | Some x -> return x |> BeanToUser |> ok
+            | Some x -> return x |> BeanToUser
             | None ->
                 conn |> MakeUser defaultuser |> ignore
-                return ok defaultuser
+                return defaultuser
     }
 
     let PurgeOldMessages oldsecs conn = async {

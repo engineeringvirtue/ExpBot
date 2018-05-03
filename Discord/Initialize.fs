@@ -4,6 +4,8 @@ open System.Threading.Tasks
 open System
 open DSharpPlus.EventArgs
 
+open ActionsUtility
+
 module Initialize =
     let MakeNewClient token =
         let config = DiscordConfiguration ()
@@ -25,6 +27,9 @@ module Initialize =
 
     let AddReady x (bot:DiscordClient) =
         bot.add_Ready (fun args -> x bot args |> Async.Start; Task.CompletedTask); bot
+
+    let AddGuildAvaliable x (bot:DiscordClient) =
+        bot.add_GuildAvailable (fun args -> x bot args |> Async.Start; Task.CompletedTask); bot
 
     let Connect (bot:DiscordClient) =
         bot.ConnectAsync () |> Async.AwaitTask |> Async.RunSynchronously
@@ -51,7 +56,7 @@ module Initialize =
 
     let StartCodeKey (config:ExpBot.Data.BotConfig) = async {
         let ranks = Data.MakeRanksExp config.RankIds
-        do! MakeNewClient config.Token |> AddReady Ready |> AddLog
+        do! MakeNewClient config.Token |> AddGuildAvaliable Utility.LogRoles |> AddGuildAvaliable (RestoreRoles config ranks) |> AddReady Ready |> AddLog
             |> fun x -> AddMessageCreated (Commands.ExpBotMessageCreated config ranks x) x
             |> AddMemberLeave
                 (fun x -> LimeBeanData.InitializeConn config.ConnString |> LimeBeanMapping.RemoveUser x.Member.Id |> Async.Ignore)

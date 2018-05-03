@@ -4,6 +4,7 @@ open Chessie.ErrorHandling
 open System
 open System.Threading.Tasks
 open DSharpPlus.Entities
+open DSharpPlus.EventArgs
 open System.Text.RegularExpressions
 
 module Utility =
@@ -13,11 +14,17 @@ module Utility =
         with
             | :? System.IndexOutOfRangeException -> None
 
+    let GetGuild (client:DiscordClient) =
+        client.Guilds |> Seq.toList |> List.head |> (fun x -> x.Value)
+
     let FindRoleByName (client:DiscordClient) name =
-        let guild = client.Guilds.Item (uint64 0)
-        if isNull guild then None
-            else
-                guild.Roles |> Seq.tryFind (fun x -> x.Name=name)
+        let guild = client |> GetGuild
+        guild.Roles |> Seq.tryFind (fun x -> x.Name=name)
+
+    let LogRoles (client:DiscordClient) (x:GuildCreateEventArgs) = async {
+        let guild = x.Guild
+        guild.Roles |> Seq.toList |> List.iter (fun x -> printfn "Role named %s has ID %i" x.Name x.Id)
+    }
 
     let GetGuildUser (usr:DiscordUser) =
         match usr with
