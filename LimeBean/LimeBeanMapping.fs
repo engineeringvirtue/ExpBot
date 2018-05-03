@@ -10,11 +10,14 @@ open System
 open Chessie.ErrorHandling
 
 module LimeBeanMapping =
+    let ConfigureUser conn =
+        conn |> CustomKey "user" "userid"
+
     let UserToBean {UserId=id; Exp=Exp exp; Rank=rank} api =
-        Dispense "user" api |> Put "id" id |> Put "exp" exp |> Put "rank" rank
+        Dispense "user" api |> Put "userid" id |> Put "exp" exp |> Put "rank" rank
     let BeanToUser b =
         let getb x = Get x b
-        {UserId=getb "id"; Exp=getb "exp" |> Exp; Rank=getb "rank"}
+        {UserId=getb "userid"; Exp=getb "exp" |> Exp; Rank=getb "rank"}
 
     let MakeUser u api = async {
         let b = api |> UserToBean u
@@ -23,7 +26,7 @@ module LimeBeanMapping =
 
     let GetOrMakeUser id conn = async {
         let defaultuser = {UserId=id; Exp=Exp 0.0; Rank=0 }
-        let res = conn |> Find "user" "WHERE Id={0}" [|id|]
+        let res = conn |> Find "user" "WHERE UserId={0}" [|id|]
         match res |> Array.tryHead with
             | Some x -> return x |> BeanToUser
             | None ->
@@ -70,7 +73,7 @@ module LimeBeanMapping =
     }
 
     let RemoveUser id conn = async {
-        return conn |> Exec "DELETE FROM user WHERE Id={0}" [|id|]
+        return conn |> Exec "DELETE FROM user WHERE UserId={0}" [|id|]
     }
 
     // let AddRole id conn = async {

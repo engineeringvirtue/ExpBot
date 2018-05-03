@@ -22,7 +22,7 @@ module Analyze =
         | Announcement of string
 
     let HandleMessage {ConnString=connstr;} ranks (dmsgdata:DiscordMessage) newmsg = async {
-        use conn = LimeBeanData.InitializeConn connstr
+        use conn = LimeBeanData.InitializeConn connstr |> ConfigureUser
 
         let! user = GetOrMakeUser newmsg.UserId conn
 

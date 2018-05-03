@@ -14,7 +14,7 @@ open ActionsRole
 
 module Commands =
     //COMMANDS
-    let CommandBase cmd = (MatchPrefix '~') >> bind (MatchCommand cmd)
+    let CommandBase cmd = (MatchPrefix '-') >> bind (MatchCommand cmd)
 
     let statuscmd connstr ranks cmdinfo = CommandBase "status" >> ResultBindAsyncIgnore (statusfunc connstr ranks cmdinfo)
     let breakdowncmd connstr ranks cmdinfo = CommandBase "breakdown" >> ResultBindAsyncIgnore (breakdownfunc connstr ranks cmdinfo)

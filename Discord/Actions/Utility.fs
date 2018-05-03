@@ -31,7 +31,7 @@ module ActionsUtility =
             async {
                 match rank with
                     | Some (i,_) ->
-                            use conn = InitializeConn str
+                            use conn = InitializeConn str |> ConfigureUser
                             let! u = conn |> GetOrMakeUser (int64 mem.Id)
                             do! conn |> UpdateUser {u with Rank=i}
                     | _ -> ()

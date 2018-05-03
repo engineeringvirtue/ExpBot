@@ -38,7 +38,11 @@ module Program =
         }
 
         let {ConnString=connstring} = config
-        init connstring |> Async.Ignore |> Async.RunSynchronously
+
+        printfn "Initialize brand new database? (y/n)"
+        if Console.ReadLine() = "y" then
+            init connstring |> Async.Ignore |> Async.RunSynchronously
+
         timer connstring |> Async.Start
 
         Initialize.StartCodeKey config |> Async.RunSynchronously

@@ -24,7 +24,7 @@ module Data =
         match ranks with
             | [] -> Rank (Exp 0.0, id)
             | (Rank (Exp x,_))::_ ->
-                let exp = (float x)*1.5+2000.0 |> round |> Exp
+                let exp = (float x)*1.2+1000.0 |> round |> Exp
                 Rank (exp, id)
 
     let MakeRanksExp ids =

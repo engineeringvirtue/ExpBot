@@ -9,6 +9,7 @@ open Analyze
 
 open CommandData
 open LimeBeanData
+open LimeBeanMapping
 
 module ActionsExp =
     let MessageHandleContainer config ranks (message:DiscordMessage) (user:DiscordMember) = async {
@@ -31,10 +32,16 @@ module ActionsExp =
             | _ -> ()
     }
 
+    let target info =
+            match info.Message.MentionedUsers |> Seq.tryHead with
+                | Some x -> x
+                | None -> info.Message.Author
+
     let statusfunc connstr ranks (info:CmdInfo) str = async {
-        use conn = LimeBeanData.InitializeConn connstr
-        let author = info.Message.Author
-        let! user = LimeBeanMapping.GetOrMakeUser (int64 author.Id) conn
+        use conn = InitializeConn connstr |> ConfigureUser
+        let target = target info
+
+        let! user = GetOrMakeUser (target.Id |> int64) conn
 
         let {Data.User.Exp=Exp exp; Rank=rank} = user
         let (Rank (_,roleid)) = List.item rank ranks
@@ -64,7 +71,7 @@ module ActionsExp =
         let embed = embed.AddField ("Next Role", nextrolename, true)
         let embed = embed.WithColor (rolecolor)
         let embed = embed.WithTitle "Status"
-        let embed = embed.WithAuthor (author.Username, author.AvatarUrl, author.AvatarUrl)
+        let embed = embed.WithAuthor (target.Username, target.AvatarUrl, target.AvatarUrl)
         let embed = embed.Build ()
         do! info.Message.RespondAsync (embed=embed) |> Async.AwaitTask |> Async.Ignore
 
@@ -72,9 +79,9 @@ module ActionsExp =
     }
 
     let breakdownfunc connstr ranks (info:CmdInfo) str = async {
-        use conn = LimeBeanData.InitializeConn connstr
-        let author = info.Message.Author
-        let! msgs = conn |> LimeBeanMapping.GetLastMessagesMadeByUser (int64 author.Id)
+        use conn = InitializeConn connstr |> ConfigureUser
+        let target = target info
+        let! msgs = conn |> GetLastMessagesMadeByUser (int64 target.Id)
 
         match msgs with
             | [] ->
@@ -94,7 +101,7 @@ module ActionsExp =
                 let embed = embed.AddField ("Continuations of your messages", same |> topercentstring, true)
                 let embed = embed.WithColor DiscordColor.Blurple
                 let embed = embed.WithTitle "Breakdown"
-                let embed = embed.WithAuthor (author.Username, author.AvatarUrl, author.AvatarUrl)
+                let embed = embed.WithAuthor (target.Username, target.AvatarUrl, target.AvatarUrl)
                 let embed = embed.Build ()
                 do! info.Message.RespondAsync (embed=embed) |> Async.AwaitTask |> Async.Ignore
 

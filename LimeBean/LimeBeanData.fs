@@ -26,6 +26,10 @@ module LimeBeanData =
         api.Key (keytype,keyval)
         api
 
+    let CustomKey keytype (keyval:string) (api:BeanApi) =
+        api.Key (keytype,keyval,false)
+        api
+
     let Trash x (api:BeanApi) =
         api.Trash (x) |> ignore
 
