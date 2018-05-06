@@ -18,17 +18,17 @@ module Filters =
         let! msg = conn |> GetMessage (int64 msgid)
 
         match msg with
-            | None -> return NoEffect
+            | None -> return (NoEffect,false)
             | Some x ->
                 let contents2 = x |> Get "contents"
-                let percent = levenshtein contents contents2
-                return (int percent)*70 |> float |> FilterIntensitySub
+                let percent = levenshtein contents contents2 |> int |> (*) 70
+                return percent |> float |> FilterIntensitySub, percent > 40
     }
 
     let CheckForSpam {Exp=exp; Contents=contents; UserId=uid;} =
         match contents with
-            | RegexMatch "([A-Z]{2,})" _ -> 15 |> float |> FilterIntensitySub
-            | _ -> NoEffect
+            | RegexMatch "([A-Z]{2,})" _ -> (15 |> float |> FilterIntensitySub,true)
+            | _ -> (NoEffect,false)
 
     let CheckForReply conn {Exp=exp; Contents=contents; UserId=uid;} = async {
         let! msgid = conn |> GetLastMessageId
@@ -63,11 +63,11 @@ module Filters =
         let lasthoursum = match msgs with
                             | [] -> 0 |> float | _ -> List.sumBy ExtractExpFloat lasthourmsgs
 
-        if lasthoursum > 1200.0 then
-            return NegateAll
+        if lasthoursum > 500.0 then
+            return (NegateAll,true)
         else
             let average = match msgs with
                             | [] -> 0 |> float | _ -> List.averageBy ExtractExpFloat msgs
             System.Console.WriteLine average
-            return FilterIntensityMult ((average/80.0)+1.0)
+            return (FilterIntensityMult ((average/80.0)+1.0),false)
     }

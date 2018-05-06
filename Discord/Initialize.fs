@@ -56,9 +56,10 @@ module Initialize =
 
     let StartCodeKey (config:ExpBot.Data.BotConfig) = async {
         let ranks = Data.MakeRanksExp config.RankIds
-        do! MakeNewClient config.Token |> AddGuildAvaliable Utility.LogRoles |> AddReady Ready |> AddLog
+        do! MakeNewClient config.Token |> AddGuildAvaliable Utility.LogRoles |> AddGuildAvaliable (RestoreRoles config ranks)
+            |> AddReady Ready |> AddLog
             |> fun x -> AddMessageCreated (Commands.ExpBotMessageCreated config ranks x) x
             |> AddMemberLeave
-                (fun x -> LimeBeanData.InitializeConn config.ConnString |> LimeBeanMapping.ConfigureUser |> LimeBeanMapping.RemoveUser x.Member.Id |> Async.Ignore)
+                (fun x -> LimeBeanData.InitializeConn config.ConnString |> LimeBeanMapping.ConfigureUser |> LimeBeanMapping.RemoveUser (int64 x.Member.Id) |> Async.Ignore)
             |> Connect |> LoopForever
     }

@@ -51,7 +51,7 @@ module LimeBeanMapping =
         conn |> Store b
     }
 
-    let GetLastMessagesMadeByUser userid conn = async {
+    let GetLastMessagesMadeByUser (userid:int64) conn = async {
         let arr = conn |> Find "message" "WHERE UserId={0}" [|userid|]
         return arr |> Array.toList
     }
@@ -71,9 +71,9 @@ module LimeBeanMapping =
     let UpdateUser newuser conn = async {
         return conn |> Store (conn |> UserToBean newuser)
     }
-
-    let RemoveUser id conn = async {
-        return conn |> Exec "DELETE FROM user WHERE UserId={0}" [|id|]
+    
+    let RemoveUser (id:int64) conn = async {
+        conn |> Load "user" id |> bind (fun x -> ok (conn |> Trash x)) |> ignore
     }
 
     // let AddRole id conn = async {

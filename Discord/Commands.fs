@@ -32,6 +32,7 @@ module Commands =
         else
             match GetGuildUser messageargs.Author with
                 | Some user ->
-                    MessageHandleContainer config ranks msg user |> Async.Start
+                    if msg.Content <> "" then
+                        MessageHandleContainer config ranks msg user |> Async.Start
                 | _ -> ()
     }
