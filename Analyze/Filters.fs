@@ -42,18 +42,18 @@ module Filters =
                 let uid2 = x |> Get "id"
 
                 if uid=uid2 && time > maxtime then
-                    return FilterIntensitySub 35.0
-                elif time > maxtime then return FilterIntensityAdd 20.0
-                else return NoEffect
-            | _ -> return NoEffect
+                    return (FilterIntensitySub 35.0,true)
+                elif time > maxtime then return (FilterIntensityAdd 20.0, false)
+                else return (NoEffect,true)
+            | _ -> return (NoEffect,true)
     }
 
     let CheckForLength {Exp=exp; Contents=contents; UserId=uid;} =
         let len = contents.Length-10
 
         if len > 10 then
-            FilterIntensityAdd 10.0
-        else FilterIntensityAdd (float len)
+            FilterIntensityAdd 10.0, false
+        else FilterIntensityAdd (float len), true
 
     let CheckForConsistency conn {Exp=exp; Contents=contents; UserId=uid;} = async {
         let! msgs = conn |> GetLastMessagesMadeByUser uid

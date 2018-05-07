@@ -26,27 +26,20 @@ module Analyze =
 
         let! user = GetOrMakeUser newmsg.UserId conn
 
-        let! repeatintensity = newmsg |> CheckForRepetition conn
-        let spamintensity = newmsg |> CheckForSpam
+        let! (repeatintensity,spam1) = newmsg |> CheckForRepetition conn
+        let (spamintensity,spam2) = newmsg |> CheckForSpam
 
-        let! replyintensity = newmsg |> CheckForReply conn
-        let lengthintensity = newmsg |> CheckForLength
-        let! consistencyintensity = newmsg |> CheckForConsistency conn
+        let! (replyintensity,reply) = newmsg |> CheckForReply conn
+        let (lengthintensity,spam3) = newmsg |> CheckForLength
+        let! (consistencyintensity,consistent) = newmsg |> CheckForConsistency conn
 
-        let consistent = match consistencyintensity with | NegateAll -> true | _ -> false
-        let spam =
-            match spamintensity, repeatintensity, lengthintensity with
-                | FilterIntensity (spam,_), _, _ when spam > 0.0 -> true
-                | _, FilterIntensity (rep,_), _ when rep > 40.0 -> true
-                | _, _, FilterIntensity (len,_) when len < 0.0 -> true
-                | _ -> false
-        let same = match replyintensity with | FilterIntensity (x,_) when x > 0.0 -> true | _ -> false
+        let spam = ([spam1;spam2;spam3] |> List.averageBy BoolToInt) > 0.6
 
         Log ("Repeat: "+string repeatintensity+" Spam: "+string spamintensity+" Reply: "+string replyintensity+" Length: "+string lengthintensity+" Consistency: "+string consistencyintensity)
         let unprocexp = float 50 |> ComputeFilterIntensities [repeatintensity; spamintensity; replyintensity; lengthintensity; consistencyintensity]
         let exp = if unprocexp < float 0 then float 0 else unprocexp
 
-        do! conn |> LimeBeanMapping.MakeMessage {Message={newmsg with Exp=Exp exp}; MessageBreakdown={Spam=spam; Consistent=consistent; SamePerson=same}} |> Async.Ignore
+        do! conn |> LimeBeanMapping.MakeMessage {Message={newmsg with Exp=Exp exp}; MessageBreakdown={Spam=spam; Consistent=consistent; SamePerson=reply}} |> Async.Ignore
 
         let {Rank=rank;Exp=Exp curexp} = user
         let newexp = curexp+exp
