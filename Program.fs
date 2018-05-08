@@ -35,6 +35,7 @@ module Program =
             do! conn |> LimeBeanMapping.PurgeOldMessages 86400.0 |> Async.Ignore
             do! Async.Sleep (3600*1000)
             return! timer connstring
+            conn.Dispose ()
         }
 
         let {ConnString=connstring} = config
