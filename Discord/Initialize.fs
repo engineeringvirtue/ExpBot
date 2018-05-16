@@ -15,8 +15,6 @@ module Initialize =
 
     let Ready (client:DiscordClient) args = async {
         Console.WriteLine ("Bot started!")
-        let imagestream = IO.File.OpenRead("Dependencies/logo.png")
-        client.EditCurrentUserAsync (avatar=imagestream) |> Async.AwaitTask |> Async.Ignore |> Async.Start
     }
 
     let AddMessageCreated x (bot:DiscordClient) =
@@ -60,6 +58,8 @@ module Initialize =
             |> AddReady Ready |> AddLog
             |> fun x -> AddMessageCreated (Commands.ExpBotMessageCreated config ranks x) x
             |> AddMemberLeave
-                (fun x -> LimeBeanData.InitializeConn config.ConnString |> LimeBeanMapping.ConfigureUser |> LimeBeanMapping.RemoveUser (int64 x.Member.Id) |> Async.Ignore)
+                (fun x ->
+                    use conn = LimeBeanData.InitializeConn config.ConnString
+                    conn |> LimeBeanMapping.ConfigureUser |> LimeBeanMapping.RemoveUser (int64 x.Member.Id) |> Async.Ignore)
             |> Connect |> LoopForever
     }
