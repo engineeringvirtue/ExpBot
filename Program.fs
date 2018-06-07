@@ -5,8 +5,10 @@ namespace ExpBot
 open System
 open ExpBot.Data
 open ExpBot
+open Npgsql.Logging
 open System.IO
 open System.Threading
+open System.Diagnostics
 
 module Program =
 
@@ -34,8 +36,8 @@ module Program =
             use conn = LimeBeanData.InitializeConn connstring
             do! conn |> LimeBeanMapping.PurgeOldMessages 86400.0 |> Async.Ignore
             do! Async.Sleep (3600*1000)
-            return! timer connstring
             conn.Dispose ()
+            return! timer connstring
         }
 
         let {ConnString=connstring} = config
@@ -45,6 +47,9 @@ module Program =
             init connstring |> Async.Ignore |> Async.RunSynchronously
 
         timer connstring |> Async.Start
+
+        if Debugger.IsAttached then
+            NpgsqlLogManager.Provider <- new ConsoleLoggingProvider(NpgsqlLogLevel.Debug)
 
         Initialize.StartCodeKey config |> Async.RunSynchronously
         0 // return an integer exit code
