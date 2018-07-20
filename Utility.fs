@@ -70,16 +70,20 @@ module Utility =
         let dist = table.[m, n]
         1.0 - (float dist/(Math.Max (m,n) |> float))
 
-    let ResultBindIgnore y x =
-        match x with
-            | Fail err -> Bad err
-            | PassOrWarn okval -> (y okval)
+    // let ResultBindIgnore y x =
+    //     match x with
+    //         | Fail err -> Bad err
+    //         | PassOrWarn okval -> (y okval)
 
     let ResultBindAsyncIgnore y x = async {
         match x with
-            | Fail err -> return Bad err
-            | PassOrWarn okval -> return! (y okval)
+            | Fail err -> ()
+            | PassOrWarn okval -> do! y okval
     }
+
+    let OptionToRes err = function
+        | Some x -> ok x
+        | None -> fail err
 
     let UnixTime secsoffset =
         let diff = DateTime.Now - DateTime(1970,01,01)
@@ -94,6 +98,11 @@ module Utility =
         (int (float*100.0))
 
     let Log (x:string) = Console.WriteLine (x)
+
+    open FParsec
+    let LiftFParsecRes = function
+        | Success (res,_,_) -> ok res
+        | Failure (err,_,_) -> Trial.fail err
 
 module JSONConverter =
     open Newtonsoft.Json

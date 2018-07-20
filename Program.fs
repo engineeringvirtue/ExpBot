@@ -42,14 +42,14 @@ module Program =
 
         let {ConnString=connstring} = config
 
-        printfn "Initialize brand new database? (y/n)"
-        if Console.ReadLine() = "y" then
-            init connstring |> Async.Ignore |> Async.RunSynchronously
+        if not Debugger.IsAttached then
+            printfn "Initialize brand new database? (y/n)"
+            if Console.ReadLine() = "y" then
+                init connstring |> Async.Ignore |> Async.RunSynchronously
 
         timer connstring |> Async.Start
 
-        if Debugger.IsAttached then
-            NpgsqlLogManager.Provider <- new ConsoleLoggingProvider(NpgsqlLogLevel.Debug)
+        NpgsqlLogManager.Provider <- new ConsoleLoggingProvider(NpgsqlLogLevel.Debug)
 
         Initialize.StartCodeKey config |> Async.RunSynchronously
         0 // return an integer exit code

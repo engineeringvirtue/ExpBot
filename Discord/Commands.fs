@@ -12,14 +12,16 @@ open CommandData
 open ActionsExp
 open ActionsRole
 
+open FParsec
+
 module Commands =
-    //COMMANDS
-    let CommandBase cmd = (MatchPrefix '-') >> bind (MatchCommand cmd)
+    let prefixbase = CmdBase "-"
 
-    let statuscmd connstr ranks cmdinfo = CommandBase "status" >> ResultBindAsyncIgnore (statusfunc connstr ranks cmdinfo)
-    let breakdowncmd connstr ranks cmdinfo = CommandBase "breakdown" >> ResultBindAsyncIgnore (breakdownfunc connstr ranks cmdinfo)
+    let statuscmd connstr ranks cmdinfo = prefixbase "status" >> ResultBindAsyncIgnore (statusfunc connstr ranks cmdinfo)
+    let breakdowncmd connstr ranks cmdinfo = prefixbase "breakdown" >> ResultBindAsyncIgnore (breakdownfunc connstr ranks cmdinfo)
+    let giverolecmd connstr cmdinfo = prefixbase "giverole" >> ResultBindAsyncIgnore (giverolefunc connstr cmdinfo)
 
-    let evs connstr ranks client msg = CmdsToEvent [statuscmd connstr ranks; breakdowncmd connstr ranks] {Message=msg; Client=client;}
+    let evs connstr ranks client msg = CmdsToEvent [statuscmd connstr ranks; breakdowncmd connstr ranks; giverolecmd connstr] {Message=msg; Client=client;}
 
     let ExpBotMessageCreated (config:BotConfig) ranks (client:DiscordClient) (messageargs:MessageCreateEventArgs) = async {
         let! msg = messageargs.Channel.GetMessageAsync (messageargs.Message.Id) |> Async.AwaitTask
@@ -27,7 +29,7 @@ module Commands =
         if messageargs.Author.Id = client.CurrentUser.Id || List.exists (fun x -> messageargs.Author.Id=x) config.Bots then
             return ()
 
-        if List.exists (fun x -> messageargs.Channel.Id=x) config.BotChannels then
+        if List.exists (fun x -> messageargs.Channel.Id=x) config.BotChannels || messageargs.Channel.IsPrivate then
             evs config.ConnString ranks client msg
         else
             match GetGuildUser messageargs.Author with

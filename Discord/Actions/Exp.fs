@@ -39,19 +39,23 @@ module ActionsExp =
 
     let statusfunc connstr ranks (info:CmdInfo) str = async {
         use conn = InitializeConn connstr |> ConfigureUser
+        let {Client=client; Message=msg} = info
         let target = target info
 
         let! user = GetOrMakeUser (target.Id |> int64) conn
 
         let {Data.User.Exp=Exp exp; Rank=rank} = user
         let (Rank (_,roleid)) = List.item rank ranks
+
+        let guild = GetGuild client
+
         let nextrolename, expstring =
             match List.tryItem (rank+1) ranks with
                 | Some (Rank (Exp nextrankexp,roleid)) ->
                     let role =
                         match roleid with
                             | Some x ->
-                                let role = info.Message.Channel.Guild.GetRole (x)
+                                let role = guild.GetRole (x)
                                 role.Name
                             | None -> "None"
                     role, string (int exp)+"/"+string (int nextrankexp)+"."
@@ -60,7 +64,7 @@ module ActionsExp =
         let rolename,rolecolor =
             match roleid with
                 | Some roleid ->
-                    let role = info.Message.Channel.Guild.GetRole (roleid)
+                    let role = guild.GetRole (roleid)
                     role.Name, role.Color
                 | None ->
                     "None", DiscordColor.DarkButNotBlack
@@ -73,19 +77,18 @@ module ActionsExp =
         let embed = embed.WithTitle "Status"
         let embed = embed.WithAuthor (target.Username, target.AvatarUrl, target.AvatarUrl)
         let embed = embed.Build ()
-        do! info.Message.RespondAsync (embed=embed) |> Async.AwaitTask |> Async.Ignore
-
-        return ok ()
+        do! msg.RespondAsync (embed=embed) |> Async.AwaitTask |> Async.Ignore
     }
 
     let breakdownfunc connstr ranks (info:CmdInfo) str = async {
         use conn = InitializeConn connstr |> ConfigureUser
+        let {Message=msg; Client=client;} = info
         let target = target info
         let! msgs = conn |> GetLastMessagesMadeByUser (int64 target.Id)
 
         match msgs with
             | [] ->
-                do! info.Message.RespondAsync ("You have not sent any messages yet!") |> Async.AwaitTask |> Async.Ignore
+                do! msg.RespondAsync ("You have not sent any messages yet!") |> Async.AwaitTask |> Async.Ignore
             | msgs ->
                 let consistent = List.averageBy (Get "consistent" >> BoolToInt) msgs
                 let spam = List.averageBy (Get "spam" >> BoolToInt) msgs
@@ -103,7 +106,5 @@ module ActionsExp =
                 let embed = embed.WithTitle "Breakdown"
                 let embed = embed.WithAuthor (target.Username, target.AvatarUrl, target.AvatarUrl)
                 let embed = embed.Build ()
-                do! info.Message.RespondAsync (embed=embed) |> Async.AwaitTask |> Async.Ignore
-
-        return ok ()
+                do! msg.RespondAsync (embed=embed) |> Async.AwaitTask |> Async.Ignore
     }

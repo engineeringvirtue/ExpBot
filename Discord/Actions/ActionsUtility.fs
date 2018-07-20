@@ -6,8 +6,10 @@ open DSharpPlus.EventArgs
 
 open LimeBeanData
 open LimeBeanMapping
+open Chessie.ErrorHandling
 
 open Data
+open Utility
 
 module ActionsUtility =
     let RestoreRoles {ConnString=str} (ranks:Rank list) (client:DiscordClient) (x:GuildCreateEventArgs) = async {
@@ -42,3 +44,9 @@ module ActionsUtility =
                 |> List.map chooser
                 |> Async.Parallel |> Async.Ignore
     }
+
+    let HandleRes (msg:DiscordMessage) = function
+        | PassOrWarn _ -> msg.RespondAsync ("Success!") |> Async.AwaitTask |> Async.Ignore
+        | Fail (x) ->
+            let errs = List.reduce (fun x y -> x+"\n"+y) x
+            msg.RespondAsync (errs) |> Async.AwaitTask |> Async.Ignore
